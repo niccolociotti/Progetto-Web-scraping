@@ -1,7 +1,10 @@
-Link,store,negozio,bag,borsa
+Link,borsa,bag,store,negozio
 www.solbiati.it,False,False,False,False
 www.maxmaraorders.com,False,False,False,False
-store.ferragamo.com,True,False,False,False
-www.ysl.com,True,False,False,False
-world.dolcegabbana.com,True,False,False,False
-http://www.bottegaveneta.com,True,True,False,False
+store.ferragamo.com,False,False,True,False
+http://www.industries-group.com,False,False,False,False
+www.gucci.com,False,False,False,False
+http://www.gucci.com,False,False,False,False
+www.ysl.com,False,False,True,False
+world.dolcegabbana.com,False,False,True,False
+http://www.bottegaveneta.com,False,False,True,True

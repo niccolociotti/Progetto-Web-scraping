@@ -6,7 +6,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 # Lista delle parole chiave da cercare
-keywords = ["blockchain","big data","realtà aumentata","intelligenza artificiale",]
+keywords = ["borsa","bag","store","negozio"]
+#["blockchain","big data","realtà aumentata","intelligenza artificiale",]
 prova_file = "prova.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
@@ -112,7 +113,7 @@ def cerca(sito):
         print(f"⚠️ [ERRORE] {sito}: {e}")
         risultato_dict = {"Link": sito}
         for keyword in keywords:
-            risultato_dict[keyword] = f"Errore: {e}"
+            risultato_dict[keyword] = False  # tutte False in caso di errore
         return risultato_dict
 
 
@@ -127,11 +128,8 @@ with ThreadPoolExecutor(max_workers=50) as executor:
         risultati.append(risultato)
 
 
-# === FILTRA errori ===
-dati_puliti = [r for r in risultati if all(not isinstance(v, str) or not v.startswith("Errore") for k, v in r.items() if k != "Link")]
-
 # === SALVA CSV ===
-pd.DataFrame(dati_puliti).to_csv("risultati_parole_chiave.csv", index=False)
+pd.DataFrame(risultati).to_csv("risultati_parole_chiave.csv", index=False)
 
 finish = time.time()
 print(f"⏰ [FINITO] Tempo totale: {finish - start:.2f} secondi")
