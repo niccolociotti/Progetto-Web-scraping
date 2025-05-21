@@ -5,8 +5,8 @@ from urllib.parse import urljoin, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Lista delle parole chiave da cercare
-keywords = ["blockchain", "intelligenza artificiale", "artificial intelligence", "machine learning"]
-prova_file = "prova.xlsx"
+keywords = ["blockchain"]
+prova_file = "Aida_Export_1_half.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
@@ -27,6 +27,13 @@ def normalizza_url(url):
 def estrai_link(soup, base_url):
     links = set()
     lingua_valide = {"it-it", "us-en"}
+    estensioni_valide = ('.html', '.htm', '.php', '.asp', '.aspx', '.jsp', '.jspx', '.js', '')  # Vuoto = path senza estensione
+
+    estensioni_escluse = (
+        '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp',
+        '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+        '.mp3', '.wav', '.mp4', '.avi', '.mov', '.zip', '.rar'
+    )
 
     for a in soup.find_all("a", href=True):
         href = a["href"]
@@ -37,15 +44,21 @@ def estrai_link(soup, base_url):
         if parsed.netloc != urlparse(base_url).netloc:
             continue
 
+        # Escludi risorse con estensioni non HTML
+        path = parsed.path.lower()
+        if any(path.endswith(ext) for ext in estensioni_escluse):
+            continue
+
+        if not path.endswith(estensioni_valide) and '.' in path.split('/')[-1]:
+            # Se ha un'estensione non valida (es: .zip, .mp4, .exe, ecc.)
+            continue
+
         path_parts = parsed.path.strip("/").split("/")
 
         # Se include una lingua valida
         if len(path_parts) >= 1 and path_parts[0].lower() in lingua_valide:
-            # Permetti massimo: /it-it        o  /it-it/qualcosa
             if len(path_parts) <= 2:
                 links.add(full_url)
-
-        # Se non ci sono lingue nel sito, accetta solo link diretti (non profondi)
         elif len(path_parts) <= 1:
             links.add(full_url)
 
@@ -107,4 +120,4 @@ with ThreadPoolExecutor(max_workers=50) as executor:
         risultati.append({"Sito": sito, "Risultato": risultato})
 
 # === OPZIONALE: Salva anche su CSV ===
-# pd.DataFrame(risultati).to_csv("risultati_parole_chiave_dettagli.csv", index=False)
+pd.DataFrame(risultati).to_csv("risultati_parole_chiave.csv", index=False)
