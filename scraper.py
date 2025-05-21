@@ -3,10 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 # Lista delle parole chiave da cercare
-keywords = ["blockchain"]
-prova_file = "Aida_Export_1_half.xlsx"
+keywords = ["blockchain","big data","realtà aumentata","intelligenza artificiale",]
+prova_file = "prova.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
@@ -73,11 +74,12 @@ def cerca(sito):
     try:
         url = normalizza_url(sito)
         print(f"➡️ [MAIN] Richiesta a: {url}")
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=3)
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator=" ", strip=True)
 
         trovate_home = contiene(text)
+        trovate_totali = set(trovate_home)
 
         risultati_trovati = []
         if trovate_home:
@@ -89,7 +91,7 @@ def cerca(sito):
         for link in links:
             try:
                 print(f"➡️ [LINK] Richiesta a: {link}")
-                r = requests.get(link, headers=headers, timeout=5)
+                r = requests.get(link, headers=headers, timeout=3)
                 r_text = BeautifulSoup(r.text, "html.parser").get_text(separator=" ", strip=True)
                 trovate_link = contiene(r_text)
                 if trovate_link:
@@ -99,25 +101,37 @@ def cerca(sito):
                 print(f"⚠️ [LINK-ERRORE] {link}: {e}")
                 continue
 
-        if risultati_trovati:
-            return sito, " | ".join(risultati_trovati)
+        # Costruisci risultato con True/False per ogni keyword
+        risultato_dict = {"Link": sito}
+        for keyword in keywords:
+            risultato_dict[keyword] = keyword in trovate_totali
 
-        print(f"❌ [NOT FOUND] Nessuna delle parole chiave trovata in {url} o nei suoi link")
-        return sito, "Nessuna parola chiave trovata"
+        return risultato_dict
 
     except Exception as e:
         print(f"⚠️ [ERRORE] {sito}: {e}")
-        return sito, f"Errore: {e}"
+        risultato_dict = {"Link": sito}
+        for keyword in keywords:
+            risultato_dict[keyword] = f"Errore: {e}"
+        return risultato_dict
 
 
 # === MULTITHREADING ===
 risultati = []
 with ThreadPoolExecutor(max_workers=50) as executor:
+    start = time.time()
     future_to_sito = {executor.submit(cerca, sito): sito for sito in df[colonna_siti]}
 
     for future in as_completed(future_to_sito):
-        sito, risultato = future.result()
-        risultati.append({"Sito": sito, "Risultato": risultato})
+        risultato = future.result()
+        risultati.append(risultato)
 
-# === OPZIONALE: Salva anche su CSV ===
-pd.DataFrame(risultati).to_csv("risultati_parole_chiave.csv", index=False)
+
+# === FILTRA errori ===
+dati_puliti = [r for r in risultati if all(not isinstance(v, str) or not v.startswith("Errore") for k, v in r.items() if k != "Link")]
+
+# === SALVA CSV ===
+pd.DataFrame(dati_puliti).to_csv("risultati_parole_chiave.csv", index=False)
+
+finish = time.time()
+print(f"⏰ [FINITO] Tempo totale: {finish - start:.2f} secondi")
