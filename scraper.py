@@ -108,3 +108,5 @@ with ThreadPoolExecutor(max_workers=50) as executor:
 
 # === OPZIONALE: Salva anche su CSV ===
 # pd.DataFrame(risultati).to_csv("risultati_parole_chiave_dettagli.csv", index=False)
+
+prova
