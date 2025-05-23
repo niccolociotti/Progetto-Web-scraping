@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 # Lista delle parole chiave da cercare
-keywords = ["blockchain","big data","realtà aumentata","intelligenza artificiale",]
+keywords = ["blockchain","machine learning","deep learning","intelligenza artificiale",]
 #["borsa","bag","store","negozio"]
 
 
@@ -61,9 +61,9 @@ def estrai_link(soup, base_url):
 
         # Se include una lingua valida
         if len(path_parts) >= 1 and path_parts[0].lower() in lingua_valide:
-            if len(path_parts) <= 2:
+            if len(path_parts) <= 3:
                 links.add(full_url)
-        elif len(path_parts) <= 1:
+        elif len(path_parts) <= 2:
             links.add(full_url)
 
     return links
