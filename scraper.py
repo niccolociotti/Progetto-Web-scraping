@@ -6,9 +6,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 # Lista delle parole chiave da cercare
-keywords = ["borsa","bag","store","negozio"]
-#["blockchain","big data","realtà aumentata","intelligenza artificiale",]
-prova_file = "prova.xlsx"
+keywords = ["blockchain","big data","realtà aumentata","intelligenza artificiale",]
+#["borsa","bag","store","negozio"]
+
+
+prova_file = "Aida_Export_1_half.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
@@ -75,7 +77,7 @@ def cerca(sito):
     try:
         url = normalizza_url(sito)
         print(f"➡️ [MAIN] Richiesta a: {url}")
-        response = requests.get(url, headers=headers, timeout=3)
+        response = requests.get(url, headers=headers, timeout=5)
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator=" ", strip=True)
 
@@ -92,12 +94,13 @@ def cerca(sito):
         for link in links:
             try:
                 print(f"➡️ [LINK] Richiesta a: {link}")
-                r = requests.get(link, headers=headers, timeout=3)
+                r = requests.get(link, headers=headers, timeout=5)
                 r_text = BeautifulSoup(r.text, "html.parser").get_text(separator=" ", strip=True)
                 trovate_link = contiene(r_text)
                 if trovate_link:
                     print(f"✅ [FOUND] Parole chiave trovate in {link}: {trovate_link}")
                     risultati_trovati.append(f"Link: {link} - {', '.join(trovate_link)}")
+                    trovate_totali.update(trovate_link)
             except Exception as e:
                 print(f"⚠️ [LINK-ERRORE] {link}: {e}")
                 continue
@@ -129,7 +132,7 @@ with ThreadPoolExecutor(max_workers=50) as executor:
 
 
 # === SALVA CSV ===
-pd.DataFrame(risultati).to_csv("risultati_parole_chiave.csv", index=False)
+pd.DataFrame(risultati).to_csv("risultati.csv", index=False)
 
 finish = time.time()
 print(f"⏰ [FINITO] Tempo totale: {finish - start:.2f} secondi")
