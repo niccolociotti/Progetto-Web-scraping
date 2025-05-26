@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 # Lista delle parole chiave da cercare
-keywords = ["blockchain","machine learning","deep learning","intelligenza artificiale",]
+keywords = ["blockchain","machine learning","deep learning","intelligenza artificiale","computer vision"]
 #["borsa","bag","store","negozio"]
 
 
@@ -77,7 +77,7 @@ def cerca(sito):
     try:
         url = normalizza_url(sito)
         print(f"➡️ [MAIN] Richiesta a: {url}")
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator=" ", strip=True)
 
@@ -94,7 +94,7 @@ def cerca(sito):
         for link in links:
             try:
                 print(f"➡️ [LINK] Richiesta a: {link}")
-                r = requests.get(link, headers=headers, timeout=5)
+                r = requests.get(link, headers=headers, timeout=10)
                 r_text = BeautifulSoup(r.text, "html.parser").get_text(separator=" ", strip=True)
                 trovate_link = contiene(r_text)
                 if trovate_link:
@@ -132,7 +132,7 @@ with ThreadPoolExecutor(max_workers=50) as executor:
 
 
 # === SALVA CSV ===
-pd.DataFrame(risultati).to_csv("risultati.csv", index=False)
+pd.DataFrame(risultati).to_csv("risultati_timeout3.csv", index=False)
 
 finish = time.time()
 print(f"⏰ [FINITO] Tempo totale: {finish - start:.2f} secondi")
