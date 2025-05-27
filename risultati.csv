@@ -52,7 +52,7 @@ http://www.fabianafilippi.it,False,False,False,False,False
 www.paima.it,False,False,False,False,False
 www.rickowens.eu/en,False,False,False,False,False
 grisport.it,False,False,False,False,False
-www.ysl.com,False,False,False,False,False
+www.ysl.com,False,False,False,True,False
 www.crestleather.com,False,False,False,False,False
 www.errea.it,False,False,False,False,False
 http://www.italianshoes.com,False,False,False,False,False
@@ -113,7 +113,7 @@ www.gentilimosconi.it,False,False,False,False,False
 www.antiba.it,False,False,False,False,False
 ru.piquadro.com,False,False,False,False,False
 menghi.com,False,False,False,False,False
-http://www.maxmarafashion.com,False,False,False,False,False
+http://www.maxmarafashion.com,False,True,False,True,False
 www.cuoioditoscana.it,False,False,False,False,False
 http://www.gilmar.it,False,False,False,False,False
 www.bonis-spa.com,False,False,False,False,False
@@ -220,7 +220,7 @@ www.ilarygroup.com,False,False,False,False,False
 alecycling.com,False,False,False,False,False
 aesseprojects.com,False,False,False,False,False
 blueline.it,False,False,False,False,False
-http://www.balenciaga.com,False,False,False,False,False
+http://www.balenciaga.com,False,False,False,True,False
 www.peserico.it,False,False,False,False,False
 http://www.assoitaly.it,False,False,False,False,False
 www.erregiricami.it,False,False,False,False,False
