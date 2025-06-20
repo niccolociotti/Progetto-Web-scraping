@@ -9,9 +9,9 @@ import re
 # Lista delle parole chiave da cercare
 keywords = ["AI","IA","machine learning","deep learning","intelligenza artificiale","computer vision","artificial intelligence","LLM","reti neurali","neural networks"]
 #["borsa","bag","store","negozio"]
+url_visitati = set()
 
-
-prova_file = "Aida_Export_1_half.xlsx"
+prova_file = "C:\\Users\\utente\\Desktop\\Progetto-Web-scraping\\Progetto-Web-scraping\\prova.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
@@ -99,6 +99,7 @@ def cerca(sito):
         response = requests.get(url, headers=headers, timeout=5)
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator=" ", strip=True)
+        url_visitati.add(url)
 
         trovate_home = contiene(text)
         trovate_totali = set(trovate_home)
@@ -116,6 +117,7 @@ def cerca(sito):
                 r = requests.get(link, headers=headers, timeout=5)
                 r_text = BeautifulSoup(r.text, "html.parser").get_text(separator=" ", strip=True)
                 trovate_link = contiene(r_text)
+                url_visitati.add(link)
                 if trovate_link:
                     print(f"✅ [FOUND] Parole chiave trovate in {link}: {trovate_link}")
                     risultati_trovati.append(f"Link: {link} - {', '.join(trovate_link)}")
@@ -203,5 +205,56 @@ with ThreadPoolExecutor(max_workers=50) as executor:
 # === SALVA CSV ===
 pd.DataFrame(risultati).to_csv("risultati_timeout3.csv", index=False)
 
+# === STATISTICHE ===
+df_risultati = pd.DataFrame(risultati)
+
+# Escludi la colonna 'Link' per le statistiche
+keyword_cols = [col for col in df_risultati.columns if col != "Link"]
+
+statistiche = df_risultati[keyword_cols].sum().sort_values(ascending=False)
+print("\n📊 Statistiche - Conteggio siti per parola chiave:")
+print(statistiche)
+
+statistiche_perc = (df_risultati[keyword_cols].sum() / len(df_risultati) * 100).sort_values(ascending=False)
+print("\n📈 Statistiche - Percentuale di occorrenza:")
+print(statistiche_perc.round(2).astype(str) + "%")
+
+df_risultati["TotaleParoleTrovate"] = df_risultati[keyword_cols].sum(axis=1)
+media_parole_per_sito = df_risultati["TotaleParoleTrovate"].mean()
+print(f"\n📌 Media parole chiave trovate per sito: {media_parole_per_sito:.2f}")
+
+combo_counts = {}
+combo_perc = {}
+
+for keyword in keywords:
+    if keyword == "AI":
+        continue  # salta la combinazione "AI + AI"
+    
+    combo_name = f"AI + {keyword}"
+    both_present = df_risultati[(df_risultati["AI"]) & (df_risultati[keyword])]
+    count = len(both_present)
+    perc = round(count / len(df_risultati) * 100, 2)
+
+    combo_counts[combo_name] = count
+    combo_perc[combo_name] = perc
+
+print("\n🔗 Totale siti con combinazione 'AI + altra keyword':")
+for name, count in combo_counts.items():
+    print(f"{name}: {count} siti")
+
+print("\n🔗 Percentuale siti con combinazione 'AI + altra keyword':")
+for name, perc in combo_perc.items():
+    print(f"{name}: {perc}%")
+    
+print(f"\n🔢 URL totali analizzati (homepage + sottolink): {len(url_visitati)}")
+
+
+# === SALVA RISULTATI IN EXCEL ===
+statistiche.to_csv("statistiche_parole_count.csv")
+statistiche_perc.to_csv("statistiche_parole_percentuale.csv")
+df_risultati.to_csv("risultati_completi_con_statistiche.csv", index=False)
+pd.Series(combo_counts).to_csv("statistiche_combo_AI_count.csv")
+pd.Series(combo_perc).to_csv("statistiche_combo_AI_percentuale.csv")
+# === TEMPO TOTALE ===
 finish = time.time()
 print(f"⏰ [FINITO] Tempo totale: {finish - start:.2f} secondi")
