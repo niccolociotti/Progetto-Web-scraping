@@ -4,9 +4,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+import re
 
 # Lista delle parole chiave da cercare
-keywords = ["blockchain","machine learning","deep learning","intelligenza artificiale","computer vision"]
+keywords = ["AI","IA","machine learning","deep learning","intelligenza artificiale","computer vision","artificial intelligence","LLM","reti neurali","neural networks"]
 #["borsa","bag","store","negozio"]
 
 
@@ -14,12 +15,14 @@ prova_file = "Aida_Export_1_half.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
+
 # === LEGGI FILE EXCEL ===
 df = pd.read_excel(prova_file)
 if colonna_siti not in df.columns:
     raise ValueError(f"La colonna '{colonna_siti}' non esiste nel file Excel.")
 df = df[[colonna_siti]].dropna()
 df[colonna_siti] = df[colonna_siti].astype(str)
+
 
 # === FUNZIONI ===
 def normalizza_url(url):
@@ -69,15 +72,31 @@ def estrai_link(soup, base_url):
     return links
 
 def contiene(text):
-    text_lower = text.lower()
-    trovate = [keyword for keyword in keywords if keyword.lower() in text_lower]
-    return trovate  # lista di parole trovate (vuota se nessuna)
+
+    trovate = []
+    for keyword in keywords:
+        if keyword == "AI":
+            # Cerca solo 'AI' esattamente maiuscolo
+            match = re.search(r'\bAI\b', text)
+        else:
+            # Per tutte le altre: parola intera, case insensitive
+            pattern = r'\b' + re.escape(keyword) + r'\b'
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+                trovate.append(keyword)
+                if keyword == "AI":
+                    start, end = match.start(), match.end()
+                    contesto = text[max(0, start-30):min(len(text), end+30)]
+                    print(f"🔍 [AI TROVATO] Contesto: ...{contesto}...")
+
+    return trovate
+
 
 def cerca(sito):
     try:
         url = normalizza_url(sito)
         print(f"➡️ [MAIN] Richiesta a: {url}")
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator=" ", strip=True)
 
@@ -94,7 +113,7 @@ def cerca(sito):
         for link in links:
             try:
                 print(f"➡️ [LINK] Richiesta a: {link}")
-                r = requests.get(link, headers=headers, timeout=10)
+                r = requests.get(link, headers=headers, timeout=5)
                 r_text = BeautifulSoup(r.text, "html.parser").get_text(separator=" ", strip=True)
                 trovate_link = contiene(r_text)
                 if trovate_link:
@@ -120,15 +139,65 @@ def cerca(sito):
         return risultato_dict
 
 
+"""""
+def test_homepage_only(url):
+    try:
+        url = normalizza_url(url)
+        print(f"➡️ [TEST-HOMEPAGE] Richiesta a: {url}")
+        response = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
+        text = soup.get_text(separator=" ", strip=True)
+
+        trovate = []
+        for keyword in keywords:
+            if keyword == "AI":
+                # Cerca solo 'AI' esattamente maiuscolo
+                match = re.search(r'\bAI\b', text)
+            else:
+                # Per tutte le altre: parola intera, case insensitive
+                pattern = r'\b' + re.escape(keyword) + r'\b'
+                match = re.search(pattern, text, flags=re.IGNORECASE)
+    
+            if match:
+                trovate.append(keyword)
+                if keyword == "AI":
+                    start, end = match.start(), match.end()
+                    contesto = text[max(0, start-30):min(len(text), end+30)]
+                    print(f"🔍 [AI TROVATO] Contesto: ...{contesto}...")
+
+
+        print(f"✅ [RESULT] Parole chiave trovate nella homepage di {url}: {trovate}")
+
+        risultato_dict = {"Link": url}
+        for keyword in keywords:
+            risultato_dict[keyword] = keyword in trovate
+
+        return risultato_dict
+
+    except Exception as e:
+        print(f"⚠️ [TEST-ERRORE] {url}: {e}")
+        risultato_dict = {"Link": url}
+        for keyword in keywords:
+            risultato_dict[keyword] = False
+        return risultato_dict
+
+
+risultato = test_homepage_only("https://ai.google")
+print(risultato)
+"""""
+
 # === MULTITHREADING ===
 risultati = []
 with ThreadPoolExecutor(max_workers=50) as executor:
     start = time.time()
     future_to_sito = {executor.submit(cerca, sito): sito for sito in df[colonna_siti]}
 
-    for future in as_completed(future_to_sito):
-        risultato = future.result()
-        risultati.append(risultato)
+    for idx, future in enumerate(as_completed(future_to_sito), start=1):
+     risultato = future.result()
+     sito_corrente = future_to_sito[future]
+     print(f"\n📊 {idx}. {sito_corrente}")
+     risultati.append(risultato)
+
 
 
 # === SALVA CSV ===
