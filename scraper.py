@@ -7,11 +7,11 @@ import time
 import re
 
 # Lista delle parole chiave da cercare
-keywords = ["AI","IA","machine learning","deep learning","intelligenza artificiale","computer vision","artificial intelligence","LLM","reti neurali","neural networks"]
+keywords = ["AI","A.I.","I.A.","A.I","I.A","IA","machine learning","deep learning","intelligenza artificiale","computer vision","artificial intelligence","LLM","large language models","large language model","reti neurali","neural networks"]
 #["borsa","bag","store","negozio"]
 url_visitati = set()
 
-prova_file = "C:\\Users\\utente\\Desktop\\Progetto-Web-scraping\\Progetto-Web-scraping\\prova.xlsx"
+prova_file = "Aida_Export_1_half.xlsx"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
@@ -72,24 +72,41 @@ def estrai_link(soup, base_url):
     return links
 
 def contiene(text):
-
     trovate = []
+
     for keyword in keywords:
-        if keyword == "AI":
-            # Cerca solo 'AI' esattamente maiuscolo
-            match = re.search(r'\bAI\b', text)
+        if keyword in ["AI", "IA"]:
+            pattern = r'\b' + keyword + r'\b'
+            match = re.search(pattern, text)
+        elif keyword in ["A.I.", "I.A.", "A.I", "I.A"]:
+            # Cerca la forma con punti obbligatori, solo se tutto maiuscolo
+            pattern = r'(?<!\w)' + keyword.replace(".", r"\.") + r'(?!\w)'
+            match = re.search(pattern, text)  # case-sensitive: NO flags=re.IGNORECASE
+            # Se matcha qualcosa tipo "a.i." (minuscolo), lo scarta
+            if match and match.group() != keyword.replace(".", ""):
+                continue
         else:
-            # Per tutte le altre: parola intera, case insensitive
-            pattern = r'\b' + re.escape(keyword) + r'\b'
+            if " " in keyword:
+                parts = map(re.escape, keyword.split())
+                pattern = r'\b' + r'[\s\-]+'.join(parts) + r'\b'
+            else:
+                pattern = r'\b' + re.escape(keyword) + r'\b'
             match = re.search(pattern, text, flags=re.IGNORECASE)
+
         if match:
-                trovate.append(keyword)
-                if keyword == "AI":
-                    start, end = match.start(), match.end()
-                    contesto = text[max(0, start-30):min(len(text), end+30)]
-                    print(f"🔍 [AI TROVATO] Contesto: ...{contesto}...")
+            # Solo per "AI" evitiamo falsi positivi con "ai" minuscolo
+            if keyword == "AI" and match.group() != "AI":
+                continue
+
+            trovate.append(keyword)
+
+            if keyword in ["AI", "IA", "A.I.", "I.A.", "A.I", "I.A"]:
+                start, end = match.start(), match.end()
+                contesto = text[max(0, start - 30):min(len(text), end + 30)]
+                print(f"🔍 [{keyword} TROVATO] Contesto: ...{contesto}...")
 
     return trovate
+
 
 
 def cerca(sito):
@@ -203,58 +220,8 @@ with ThreadPoolExecutor(max_workers=50) as executor:
 
 
 # === SALVA CSV ===
-pd.DataFrame(risultati).to_csv("risultati_timeout3.csv", index=False)
+pd.DataFrame(risultati).to_csv("risultati_prova.csv", index=False)
 
-# === STATISTICHE ===
-df_risultati = pd.DataFrame(risultati)
-
-# Escludi la colonna 'Link' per le statistiche
-keyword_cols = [col for col in df_risultati.columns if col != "Link"]
-
-statistiche = df_risultati[keyword_cols].sum().sort_values(ascending=False)
-print("\n📊 Statistiche - Conteggio siti per parola chiave:")
-print(statistiche)
-
-statistiche_perc = (df_risultati[keyword_cols].sum() / len(df_risultati) * 100).sort_values(ascending=False)
-print("\n📈 Statistiche - Percentuale di occorrenza:")
-print(statistiche_perc.round(2).astype(str) + "%")
-
-df_risultati["TotaleParoleTrovate"] = df_risultati[keyword_cols].sum(axis=1)
-media_parole_per_sito = df_risultati["TotaleParoleTrovate"].mean()
-print(f"\n📌 Media parole chiave trovate per sito: {media_parole_per_sito:.2f}")
-
-combo_counts = {}
-combo_perc = {}
-
-for keyword in keywords:
-    if keyword == "AI":
-        continue  # salta la combinazione "AI + AI"
-    
-    combo_name = f"AI + {keyword}"
-    both_present = df_risultati[(df_risultati["AI"]) & (df_risultati[keyword])]
-    count = len(both_present)
-    perc = round(count / len(df_risultati) * 100, 2)
-
-    combo_counts[combo_name] = count
-    combo_perc[combo_name] = perc
-
-print("\n🔗 Totale siti con combinazione 'AI + altra keyword':")
-for name, count in combo_counts.items():
-    print(f"{name}: {count} siti")
-
-print("\n🔗 Percentuale siti con combinazione 'AI + altra keyword':")
-for name, perc in combo_perc.items():
-    print(f"{name}: {perc}%")
-    
-print(f"\n🔢 URL totali analizzati (homepage + sottolink): {len(url_visitati)}")
-
-
-# === SALVA RISULTATI IN EXCEL ===
-statistiche.to_csv("statistiche_parole_count.csv")
-statistiche_perc.to_csv("statistiche_parole_percentuale.csv")
-df_risultati.to_csv("risultati_completi_con_statistiche.csv", index=False)
-pd.Series(combo_counts).to_csv("statistiche_combo_AI_count.csv")
-pd.Series(combo_perc).to_csv("statistiche_combo_AI_percentuale.csv")
 # === TEMPO TOTALE ===
 finish = time.time()
 print(f"⏰ [FINITO] Tempo totale: {finish - start:.2f} secondi")
