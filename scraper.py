@@ -11,7 +11,7 @@ keywords = ["AI","A.I.","I.A.","A.I","I.A","IA","machine learning","deep learnin
 #["borsa","bag","store","negozio"]
 url_visitati = set()
 
-prova_file = "Aida_Export_1_half.xlsx"
+prova_file = "C:\\Users\\utente\\Desktop\\Progetto-Web-scraping\\Progetto-Web-scraping\\Aida_Export_2.xls"
 colonna_siti = "Website"
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'}
 
@@ -220,7 +220,7 @@ with ThreadPoolExecutor(max_workers=50) as executor:
 
 
 # === SALVA CSV ===
-pd.DataFrame(risultati).to_csv("risultati_prova.csv", index=False)
+pd.DataFrame(risultati).to_csv("risultati_ultimi.csv", index=False)
 
 # === TEMPO TOTALE ===
 finish = time.time()
